@@ -49,7 +49,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.VERSION }}-rc.${{ github.run_number }},enable=${{ github.event_name == 'push' }}
             type=raw,value=latest,enable=${{ github.event_name == 'push' }}
-            type=raw,value=26.5.${{ github.run_number }}-manual,enable=${{ github.event_name == 'workflow_dispatch' }}
+            type=raw,value=${{ steps.version.outputs.VERSION }}-rc.${{ github.run_number }}-manual,enable=${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
