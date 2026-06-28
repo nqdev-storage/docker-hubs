@@ -1,23 +1,26 @@
 # Sử dụng image opencode làm base image
 # https://github.com/anomalyco/opencode/pkgs/container/opencode
-FROM ghcr.io/anomalyco/opencode:1.15.10
-#FROM ghcr.io/anomalyco/opencode:1.17.9
+#FROM ghcr.io/anomalyco/opencode:1.15.10
+FROM ghcr.io/anomalyco/opencode:1.17.11
+
+ARG IMAGE_VERSION
+LABEL version="${IMAGE_VERSION}"
 
 # Cập nhật và cài đặt các công cụ cần thiết (Git, Python, pip)
 RUN apk update && \
-    apk add --no-cache \
-    python3 \
-    python3-dev \
-    py3-pip \
-    git \
-    bash \
-    util-linux \
-    coreutils \
-    curl \
-    chromium \
-    nodejs \
-    npm && \
-    rm -rf /var/cache/apk/*
+  apk add --no-cache \
+  python3 \
+  python3-dev \
+  py3-pip \
+  git \
+  bash \
+  util-linux \
+  coreutils \
+  curl \
+  chromium \
+  nodejs \
+  npm && \
+  rm -rf /var/cache/apk/*
 
 # đảm bảo shell tồn tại
 RUN ln -sf /bin/bash /bin/sh
