@@ -1,7 +1,8 @@
 # Sử dụng image opencode làm base image
 # https://github.com/anomalyco/opencode/pkgs/container/opencode
 #FROM ghcr.io/anomalyco/opencode:1.15.10
-FROM ghcr.io/anomalyco/opencode:1.17.11
+#FROM ghcr.io/anomalyco/opencode:1.17.11
+FROM ghcr.io/anomalyco/opencode:1.17.18
 
 ARG IMAGE_VERSION
 LABEL version="${IMAGE_VERSION}"
