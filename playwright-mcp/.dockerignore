@@ -3,13 +3,16 @@
 .gitignore
 .gitattributes
 
-# Documentation
+# Documentation (reduce build context)
 README.md
+CHANGELOG.md
 *.md
+docs/
 
 # IDE
 .vscode
 .idea
+.editorconfig
 *.swp
 *.swo
 *~
@@ -17,11 +20,15 @@ README.md
 # OS
 .DS_Store
 Thumbs.db
+.cache
 
-# Dependencies
+# Dependencies (don't copy node_modules)
 node_modules
 npm-debug.log
+yarn.lock
+package-lock.json
 yarn-error.log
+pnpm-lock.yaml
 
 # Environment
 .env
@@ -29,7 +36,7 @@ yarn-error.log
 .env.*.local
 
 # Docker
-Dockerfile
+Dockerfile*
 docker-compose*.yml
 .dockerignore
 
@@ -37,7 +44,36 @@ docker-compose*.yml
 dist
 build
 target
+out
+coverage
+.turbo
 
-# Logs
+# Logs & tmp
 logs
 *.log
+tmp
+temp
+
+# Tests
+*.test.js
+*.spec.js
+test/
+tests/
+__tests__/
+cypress/
+.mocha
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+Jenkinsfile
+
+# Development
+.next
+.nuxt
+.vuepress
+.cache
+.parcel-cache
+.eslintcache
+.prettier-ignore

@@ -1,0 +1,92 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Dockerfile - Playwright MCP Server (ADVANCED SLIM)
+# -----------------------------------------
+# Build: docker build -t playwright-mcp:v1.54.2-advanced-slim -f Dockerfile.advanced-slim .
+# Size: ~650MB (aggressive optimization, highest risk)
+# WARNING: Use multi-stage build, minimal system packages, Alpine (if possible)
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# Stage 1: Build Chromium (if needed, usually pre-built)
+FROM node:22-bookworm-slim AS chromium-builder
+
+WORKDIR /tmp/chromium
+
+# Install only essential build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Playwright will download pre-built Chromium
+# This stage just ensures we have npm available
+
+
+# Stage 2: Final runtime image
+FROM node:22-alpine3.19 AS runtime
+
+WORKDIR /app
+
+# Set environment variables
+ENV NODE_ENV=production \
+    NPM_CONFIG_LOGLEVEL=error \
+    TZ=Asia/Ho_Chi_Minh \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+
+# Install only absolutely essential dependencies for Chromium on Alpine
+# Alpine has limited font support, so we add minimal fonts
+RUN apk add --no-cache \
+    curl \
+    ca-certificates \
+    libstdc++ \
+    libx11 \
+    libxrender \
+    libxext \
+    libxcb \
+    libc6-compat \
+    libxkbcommon \
+    libgcc \
+    libgomp \
+    noto-fonts-cjk \
+    && rm -rf /var/cache/apk/*
+
+# Install Chromium via playwright
+# Alpine Chromium requires gcompat layer
+RUN apk add --no-cache gcompat
+
+# Install Playwright with Chromium only
+RUN npm install -g --silent --no-save \
+    @playwright/install@1.54.2 && \
+    npx --yes --loglevel=silent playwright install chromium && \
+    npm cache clean --force
+
+# Create minimal startup script
+RUN echo '#!/bin/sh\n\
+exec npx --yes @playwright/mcp \\\n\
+  --host 0.0.0.0 \\\n\
+  --port 8931 \\\n\
+  --allowed-hosts="*" \\\n\
+  --headless' > /app/start.sh && \
+    chmod +x /app/start.sh
+
+# Expose MCP server port
+EXPOSE 8931
+
+# Minimal health check (curl might not be available)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD ["sh", "-c", "curl -fs http://localhost:8931/ || exit 1"]
+
+# Use shell script wrapper for better memory efficiency
+ENTRYPOINT ["/bin/sh"]
+CMD ["/app/start.sh"]
+
+
+# Stage 2b: Distroless Alternative (Most minimal)
+# FROM gcr.io/distroless/base-debian11
+# 
+# WORKDIR /app
+# 
+# # Copy only runtime files from builder
+# COPY --from=chromium-builder /usr/local/lib/node_modules /usr/local/lib/node_modules
+# COPY --from=chromium-builder /usr/bin/node /usr/bin/node
+# 
+# # Not recommended for Playwright - distroless lacks glib, fontconfig, etc.
+# # Keeping as reference only

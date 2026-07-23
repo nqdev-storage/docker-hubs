@@ -1,0 +1,51 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Dockerfile - Playwright MCP Server (ULTRA SLIM)
+# -----------------------------------------
+# Build: docker build -t playwright-mcp:v1.54.2-ultra-slim -f Dockerfile.ultra-slim .
+# Size: ~800MB (minimal build with Chromium only)
+# Trade-off: Takes ~2 min first build (installs deps + browser)
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+FROM node:22-bookworm-slim AS base
+
+WORKDIR /app
+
+# Set environment variables
+ENV NODE_ENV=production \
+    NPM_CONFIG_LOGLEVEL=error \
+    TZ=Asia/Ho_Chi_Minh
+
+# Install only essential system dependencies for Chromium
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    fonts-noto-cjk \
+    fonts-noto-color-emoji \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libgbm1 \
+    libxkbcommon0 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libxshmfence1 \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Playwright with only Chromium (skip Firefox & WebKit)
+RUN npx --yes --verbose=false @playwright/install@1.54.2 chromium
+
+# Expose MCP server port
+EXPOSE 8931
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -fs http://localhost:8931/ || exit 1
+
+# Default command
+CMD ["npx", "--yes", "@playwright/mcp", \
+     "--host", "0.0.0.0", \
+     "--port", "8931", \
+     "--allowed-hosts=*", \
+     "--headless"]
