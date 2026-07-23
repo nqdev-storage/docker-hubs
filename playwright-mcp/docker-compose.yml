@@ -1,0 +1,87 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Docker Compose - Playwright MCP Server
+# -----------------------------------------
+# Playwright MCP: https://playwright.dev/docs/getting-started-mcp
+# Playwright Docker: https://playwright.dev/docs/docker
+# -----------------------------------------
+# START:  docker-compose up -d --build --force-recreate --remove-orphans
+# STOP:   docker-compose down -v
+# LOGS:   docker-compose logs -f
+# SHELL:  docker-compose exec playwright-mcp bash
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+version: '3.8'
+
+services:
+  playwright-mcp:
+    # Build from Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # Container name
+    container_name: playwright-mcp-40001
+    
+    # Always restart unless explicitly stopped
+    restart: unless-stopped
+    
+    # Port mapping
+    ports:
+      - "40001:8931"
+    
+    # Environment variables
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - NODE_ENV=production
+      - NPM_CONFIG_LOGLEVEL=warn
+    
+    # DNS servers (Cloudflare + Google)
+    dns:
+      - 1.1.1.1      # Cloudflare
+      - 1.0.0.1      # Cloudflare
+      - 8.8.8.8      # Google
+      - 8.8.4.4      # Google
+    
+    # Additional hosts mapping
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "minipc-quyit:192.168.1.200"
+    
+    # Shared memory for browser instances
+    shm_size: 2gb
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"          # Max 50% CPU
+          memory: "2G"          # Max 2GB RAM
+        reservations:
+          memory: "256M"        # Min 256MB RAM
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8931/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# Network configuration (optional)
+networks:
+  default:
+    name: playwright-network
+    driver: bridge
+
+# Volume configuration (for persistence if needed)
+volumes:
+  # Uncomment if you need persistent data
+  # playwright-data:
+  #   driver: local
