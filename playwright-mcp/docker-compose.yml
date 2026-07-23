@@ -33,6 +33,28 @@ services:
       # Reduce npm overhead
       npm_config_prefer_offline: "true"
       npm_config_prefer_frozen_lockfile: "true"
+
+    #env_file:
+    #  - .env
+
+    # Command to run Playwright MCP with Chrome and dependencies
+    command: >
+      sh -c "npx playwright install --with-deps chrome && exec npx @playwright/mcp --host 0.0.0.0 --port 8931 --allowed-hosts=* --headless --caps=network,storage,testing,vision,devtools"
+    #command:
+    #  [
+    #    "npx",
+    #    "@playwright/mcp",
+    #    "--host",
+    #    "0.0.0.0",
+    #    "--port",
+    #    "8931",
+    #    "--allowed-hosts=*",
+    #    #"--allowed-hosts=your-domain.com,192.168.1.10"
+    #    "--headless",
+    #    #"--browser=chrome",
+    #    #"--browser=chromium",
+    #    "--caps=network,storage,testing,vision,devtools"
+    #  ]
     
     # DNS (simplified)
     dns:
