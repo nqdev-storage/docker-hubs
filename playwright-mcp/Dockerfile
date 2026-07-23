@@ -6,7 +6,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # Use Chromium-only base image (smaller than full Playwright)
-FROM mcr.microsoft.com/playwright:v1.54.2-chromium-noble
+FROM mcr.microsoft.com/playwright:v1.40.0-focal
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 
 # Default command - run Playwright MCP server
 CMD ["npx", "--yes", "@playwright/mcp", \
-     "--host", "0.0.0.0", \
-     "--port", "8931", \
-     "--allowed-hosts=*", \
-     "--headless"]
+    "--host", "0.0.0.0", \
+    "--port", "8931", \
+    "--allowed-hosts=*", \
+    "--headless"]

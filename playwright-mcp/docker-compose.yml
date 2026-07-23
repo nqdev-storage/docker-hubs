@@ -1,8 +1,8 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Docker Compose - Playwright MCP Server (OPTIMIZED)
 # -----------------------------------------
-# START:  docker-compose -f docker-compose.optimized.yml up -d --build
-# STOP:   docker-compose -f docker-compose.optimized.yml down -v
+# START:  docker-compose -f docker-compose.yml up -d --build
+# STOP:   docker-compose -f docker-compose.yml down -v
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 version: '3.8'
@@ -12,7 +12,7 @@ services:
     # Use optimized Dockerfile
     build:
       context: .
-      dockerfile: Dockerfile.optimized  # or Dockerfile.ultra-slim
+      dockerfile: Dockerfile  # or Dockerfile.ultra-slim
       args:
         BUILDKIT_INLINE_CACHE: 1  # Enable inline cache for faster builds
     
