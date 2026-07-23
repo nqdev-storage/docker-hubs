@@ -1,9 +1,9 @@
 name: OpenCode Build and Push Docker Image
 
 on:
-  push:
-    tags:
-      - "v*"
+  # push:
+  #   tags:
+  #     - "v*"
   workflow_dispatch:
 
 env:
