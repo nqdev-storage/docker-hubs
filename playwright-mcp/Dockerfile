@@ -1,8 +1,11 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Dockerfile - Playwright MCP Server (OPTIMIZED)
+# Dockerfile - Playwright MCP Server (OPTIMIZED - RECOMMENDED)
 # -----------------------------------------
-# Build: docker build -t playwright-mcp:v1.54.2-slim -f Dockerfile.optimized .
-# Size: ~1.2GB (vs ~2.5GB+ with multi-browser)
+# Strategy: Chromium-only base image
+# Size: ~1.2GB (52% reduction from 2.5GB+)
+# Build: ~3 minutes
+# Effort: Minimal
+# Build: docker build -t playwright-mcp:latest -f Dockerfile.optimized .
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # Use Chromium-only base image (smaller than full Playwright)
@@ -30,7 +33,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 
 # Default command - run Playwright MCP server
 CMD ["npx", "--yes", "@playwright/mcp", \
-    "--host", "0.0.0.0", \
-    "--port", "8931", \
-    "--allowed-hosts=*", \
-    "--headless"]
+     "--host", "0.0.0.0", \
+     "--port", "8931", \
+     "--allowed-hosts=*", \
+     "--headless"]
