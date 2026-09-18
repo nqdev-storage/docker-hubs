@@ -1,0 +1,15 @@
+# Secrets / local env
+.env
+**/.env
+*.env.local
+
+# Runtime/data volumes (OpenCode container state)
+opencode/data/
+
+# Version control / editor
+.git/
+.vscode/
+
+# OS cruft
+.DS_Store
+Thumbs.db

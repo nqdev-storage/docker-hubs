@@ -2,7 +2,8 @@
 # https://github.com/anomalyco/opencode/pkgs/container/opencode
 #FROM ghcr.io/anomalyco/opencode:1.15.10
 #FROM ghcr.io/anomalyco/opencode:1.17.11
-FROM ghcr.io/anomalyco/opencode:1.17.18
+# FROM ghcr.io/anomalyco/opencode:1.17.18
+FROM ghcr.io/anomalyco/opencode:1.18.31
 
 ARG IMAGE_VERSION
 LABEL version="${IMAGE_VERSION}"
@@ -46,12 +47,6 @@ RUN cat <<EOF > /root/.config/opencode/mcp.json
       "--headless",
       "--caps=network,storage,testing,vision,devtools"
     ]
-  },
-  "slim-tools": {
-    "type": "remote",
-    "url": "https://slim.tools/mcp",
-    "enabled": true,
-    "timeout": 5000
   }
 }
 EOF
