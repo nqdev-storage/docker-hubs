@@ -1,11 +1,14 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Docker Compose - Playwright MCP Server (OPTIMIZED)
 # -----------------------------------------
-# START:  docker-compose -f docker-compose.yml up -d --build
-# STOP:   docker-compose -f docker-compose.yml down -v
+# Introduction - https://playwright.dev/mcp/introduction
+# Playwright MCP: https://playwright.dev/docs/getting-started-mcp
+# Playwright Docker Images: https://playwright.dev/docs/docker
+# Github: https://github.com/nqdev-storage/docker-hubs/tree/main/playwright-mcp
+# -----------------------------------------
+# START: docker-compose up -d --build --force-recreate --remove-orphans
+# STOP: docker-compose down -v
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-version: '3.8'
 
 services:
   playwright-mcp:
