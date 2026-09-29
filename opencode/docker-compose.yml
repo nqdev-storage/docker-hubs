@@ -1,5 +1,5 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# OpenCode Docker Compose Configuration
+# 9Router - Connect All AI Code Tools to 40+ AI Providers & 100+ Models
 # -----------------------------------------
 # A self-hosted, open-source, and privacy-focused router for your applications.
 # GitHub: https://github.com/anomalyco/opencode
@@ -15,17 +15,20 @@
 services:
   opencode:
     #image: ghcr.io/anomalyco/opencode:latest
-    image: quyit/opencode:1.17.9
-    build:
-      context: .  # Thư mục chứa Dockerfile
-      dockerfile: Dockerfile  # Tên của Dockerfile, nếu khác tên mặc định 'Dockerfile'
-    container_name: opencode-10026
+    #image: ghcr.io/nqdev-storage/opencode:1.17.18-rc7-manual
+    #image: ghcr.io/nqdev-storage/opencode:1.18.31-rc9-manual
+    image: ghcr.io/nqdev-storage/opencode:2.0.18-rc11-manual
+    #image: quyit/opencode:1.17.9
+    #build:
+    #  context: .  # Thư mục chứa Dockerfile
+    #  dockerfile: Dockerfile  # Tên của Dockerfile, nếu khác tên mặc định 'Dockerfile'
+    container_name: opencode-10029
     restart: unless-stopped
     user: root  # Thêm dòng này để chạy container với quyền root
     privileged: true # Cấp quyền quản trị đặc biệt để can thiệp hệ thống mạng (MITM cần)
     # network_mode: host
     ports:
-      - "10026:4096"    # ánh xạ port để truy cập từ ngoài
+      - "10029:4096"    # ánh xạ port để truy cập từ ngoài
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - OPENCODE_SERVER_USERNAME=${OPENCODE_SERVER_USERNAME:-opencode}
@@ -34,12 +37,15 @@ services:
       - WAKATIME_API_KEY=${WAKATIME_API_KEY:-ak-api-key}
     env_file:
       - .env
-    command: web --hostname 0.0.0.0 --port 4096
+    # command: web --hostname 0.0.0.0 --port 4096 # → v1
+    command: serve --hostname 0.0.0.0 --port 4096 # → v2
     volumes:
       # Mount file config (chọn :ro để bảo mật)
       # - ~/.wakatime.cfg:/root/.wakatime.cfg:ro
       - ./data/oc-local:/root/.local/share/opencode/
       - ./data/oc-config:/root/.config/opencode/
+      - ./data/oc-cache:/root/.cache/opencode       # (LSP server tải về, v.v. — mất thì lần chạy sau tải lại)
+      - ./data/oc-state:/root/.local/state/opencode
       - ./data/wps:/app/data   # lưu dữ liệu persistent
     #depends_on:
     #  - n8n_db
