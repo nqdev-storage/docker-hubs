@@ -1,11 +1,14 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# 9Router - Connect All AI Code Tools to 40+ AI Providers & 100+ Models
+# OpenCode Docker Compose Configuration
 # -----------------------------------------
 # A self-hosted, open-source, and privacy-focused router for your applications.
 # GitHub: https://github.com/anomalyco/opencode
 # Documentation: https://opencode.ai/docs/#windows
+# OpenCode v1 -> https://opencode.ai/docs
+# OpenCode v2 -> https://opencode.ai/v2/docs
 # - Server: https://opencode.ai/docs/server/
 # - Zen: https://opencode.ai/docs/zen/
+# - CLI Env: https://opencode.io.vn/docs/cli/
 # -----------------------------------------
 # START: docker-compose up -d --build --force-recreate --remove-orphans
 # STOP: docker-compose down -v --remove-orphans

@@ -4,12 +4,15 @@
 # A self-hosted, open-source, and privacy-focused router for your applications.
 # GitHub: https://github.com/anomalyco/opencode
 # Documentation: https://opencode.ai/docs/#windows
+# OpenCode v1 -> https://opencode.ai/docs
+# OpenCode v2 -> https://opencode.ai/v2/docs
 # - Server: https://opencode.ai/docs/server/
 # - Zen: https://opencode.ai/docs/zen/
+# - CLI Env: https://opencode.io.vn/docs/cli/
 # -----------------------------------------
 # START: docker-compose up -d --build --force-recreate --remove-orphans
 # STOP: docker-compose down -v --remove-orphans
-# EXEC: docker exec -it opencode-10029 script -q -c "bash"
+# EXEC: docker exec -it opencode-10026 script -q -c "bash"
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 services:
@@ -46,6 +49,7 @@ services:
       - ./data/oc-config:/root/.config/opencode/
       - ./data/oc-cache:/root/.cache/opencode       # (LSP server tải về, v.v. — mất thì lần chạy sau tải lại)
       - ./data/oc-state:/root/.local/state/opencode
+      - ./data/wps:/app/data   # lưu dữ liệu persistent
     #depends_on:
     #  - n8n_db
     #  - n8n_redis
