@@ -3,7 +3,7 @@
 #FROM ghcr.io/anomalyco/opencode:1.15.10
 #FROM ghcr.io/anomalyco/opencode:1.17.11
 # FROM ghcr.io/anomalyco/opencode:1.17.18
-FROM ghcr.io/anomalyco/opencode:1.18.31
+FROM ghcr.io/anomalyco/opencode:1.18.33
 
 ARG IMAGE_VERSION
 LABEL version="${IMAGE_VERSION}"
