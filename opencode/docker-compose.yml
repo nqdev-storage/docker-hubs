@@ -23,33 +23,33 @@ services:
     image: ghcr.io/nqdev-storage/opencode:2.0.18-rc11-manual
     #image: quyit/opencode:1.17.9
     #build:
-    #  context: .  # Thư mục chứa Dockerfile
-    #  dockerfile: Dockerfile  # Tên của Dockerfile, nếu khác tên mặc định 'Dockerfile'
+    #  context: .  # Th╞░ mß╗Ñc chß╗⌐a Dockerfile
+    #  dockerfile: Dockerfile  # T├¬n cß╗ºa Dockerfile, nß║┐u kh├íc t├¬n mß║╖c ─æß╗ïnh 'Dockerfile'
     container_name: opencode-10029
     restart: unless-stopped
-    user: root  # Thêm dòng này để chạy container với quyền root
-    privileged: true # Cấp quyền quản trị đặc biệt để can thiệp hệ thống mạng (MITM cần)
+    user: root  # Th├¬m d├▓ng n├áy ─æß╗â chß║íy container vß╗¢i quyß╗ün root
+    privileged: true # Cß║Ñp quyß╗ün quß║ún trß╗ï ─æß║╖c biß╗çt ─æß╗â can thiß╗çp hß╗ç thß╗æng mß║íng (MITM cß║ºn)
     # network_mode: host
     ports:
-      - "10029:4096"    # ánh xạ port để truy cập từ ngoài
+      - "10029:4096"    # ├ính xß║í port ─æß╗â truy cß║¡p tß╗½ ngo├ái
     environment:
       - TZ=Asia/Ho_Chi_Minh
       - OPENCODE_SERVER_USERNAME=${OPENCODE_SERVER_USERNAME:-opencode}
       - OPENCODE_SERVER_PASSWORD=${OPENCODE_SERVER_PASSWORD:-password}
-      # Một số plugin/CLI của WakaTime hỗ trợ đọc trực tiếp từ ENV
+      # Mß╗Öt sß╗æ plugin/CLI cß╗ºa WakaTime hß╗ù trß╗ú ─æß╗ìc trß╗▒c tiß║┐p tß╗½ ENV
       - WAKATIME_API_KEY=${WAKATIME_API_KEY:-ak-api-key}
     env_file:
       - .env
-    # command: web --hostname 0.0.0.0 --port 4096 # → v1
-    command: serve --hostname 0.0.0.0 --port 4096 # → v2
+    # command: web --hostname 0.0.0.0 --port 4096 # ΓåÆ v1
+    command: serve --hostname 0.0.0.0 --port 4096 # ΓåÆ v2
     volumes:
-      # Mount file config (chọn :ro để bảo mật)
+      # Mount file config (chß╗ìn :ro ─æß╗â bß║úo mß║¡t)
       # - ~/.wakatime.cfg:/root/.wakatime.cfg:ro
       - ./data/oc-local:/root/.local/share/opencode/
       - ./data/oc-config:/root/.config/opencode/
-      - ./data/oc-cache:/root/.cache/opencode       # (LSP server tải về, v.v. — mất thì lần chạy sau tải lại)
+      - ./data/oc-cache:/root/.cache/opencode       # (LSP server tß║úi vß╗ü, v.v. ΓÇö mß║Ñt th├¼ lß║ºn chß║íy sau tß║úi lß║íi)
       - ./data/oc-state:/root/.local/state/opencode
-      - ./data/wps:/app/data   # lưu dữ liệu persistent
+      - ./data/wps:/app/data   # l╞░u dß╗» liß╗çu persistent
     #depends_on:
     #  - n8n_db
     #  - n8n_redis
@@ -59,17 +59,18 @@ services:
       - 8.8.8.8
       - 8.8.4.4
     extra_hosts:
-      - "host.docker.internal:host-gateway" # Để kết nối đến localhost của host từ container
+      - "host.docker.internal:host-gateway" # ─Éß╗â kß║┐t nß╗æi ─æß║┐n localhost cß╗ºa host tß╗½ container
       - "minipc-quyit:192.168.1.200"
     ulimits:
-      nproc: 65536 # Giới hạn số lượng tiến trình con mà container có thể tạo ra
-      nofile: # Giới hạn số lượng file mà container có thể mở cùng lúc
+      nproc: 65536 # Giß╗¢i hß║ín sß╗æ l╞░ß╗úng tiß║┐n tr├¼nh con m├á container c├│ thß╗â tß║ío ra
+      nofile: # Giß╗¢i hß║ín sß╗æ l╞░ß╗úng file m├á container c├│ thß╗â mß╗ƒ c├╣ng l├║c
         soft: 102400
         hard: 102400
     deploy:
       resources:
         limits:
-          cpus: "4" # Giới hạn 80% CPU
-          memory: "8G" # Giới hạn 3.2GB RAM (80% của 4GB)
+          cpus: "1" # Giß╗¢i hß║ín 80% CPU
+          memory: "4G" # Giß╗¢i hß║ín 3.2GB RAM (80% cß╗ºa 4GB)
         reservations:
-          memory: "256M" # Đảm bảo container có ít nhất 256MB RAM
+          memory: "256M" # ─Éß║úm bß║úo container c├│ ├¡t nhß║Ñt 256MB RAM
+

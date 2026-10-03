@@ -7,6 +7,10 @@ FROM ghcr.io/anomalyco/opencode:2.0.22
 ARG IMAGE_VERSION
 LABEL version="${IMAGE_VERSION}"
 
+# Fix: Polyfill crypto.randomUUID for compatibility with isolated JS contexts (upload/context)
+COPY preload /opt/opencode-preload
+ENV NODE_OPTIONS="--require /opt/opencode-preload/index.js"
+
 # Cập nhật và cài đặt các công cụ cần thiết (Git, Python, pip)
 RUN apk update && \
   apk add --no-cache \
