@@ -6,6 +6,8 @@ FROM ghcr.io/anomalyco/opencode:2.0.22
 
 ARG IMAGE_VERSION
 LABEL version="${IMAGE_VERSION}"
+LABEL title="OpenCode v2"
+LABEL description="Docker image for anomalyco/opencode with additional tools and configurations"
 
 # Fix: Polyfill crypto.randomUUID for compatibility with isolated JS contexts (upload/context)
 COPY ./opencode/preload/ /opt/opencode-preload/
