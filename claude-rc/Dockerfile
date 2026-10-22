@@ -3,7 +3,8 @@ FROM node:22-bookworm-slim
 ARG IMAGE_VERSION
 LABEL version="${IMAGE_VERSION}" \
   title="Claude Code" \
-  description="Docker image for anomalyco/opencode with additional tools and configurations"
+  description="Docker image for Claude Code Remote Control" \
+  maintainer="OpenCode <opencode@quyit.id.vn>"
 
 # Set environment variables
 ENV TZ=Asia/Ho_Chi_Minh \
@@ -17,20 +18,20 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Cập nhật và cài đặt các công cụ cần thiết (Git, Python, pip)
-RUN apk update && \
-  apk add --no-cache \
-  python3 \
-  python3-dev \
-  py3-pip \
-  git \
-  bash \
-  util-linux \
-  coreutils \
-  curl \
-  chromium \
-  nodejs \
-  npm && \
-  rm -rf /var/cache/apk/*
+# RUN apk update && \
+#   apk add --no-cache \
+#   python3 \
+#   python3-dev \
+#   py3-pip \
+#   git \
+#   bash \
+#   util-linux \
+#   coreutils \
+#   curl \
+#   chromium \
+#   nodejs \
+#   npm && \
+#   rm -rf /var/cache/apk/*
 
 # đảm bảo shell tồn tại
 RUN ln -sf /bin/bash /bin/sh
