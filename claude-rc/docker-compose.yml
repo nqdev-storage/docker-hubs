@@ -1,0 +1,88 @@
+# ======================================================================
+# Claude RC - Claude Code Remote Control chạy trong Docker
+# ----------------------------------------------------------------------
+# Chạy `claude remote-control` (server mode) trong container, điều khiển
+# từ claude.ai/code hoặc app Claude trên điện thoại.
+#
+# Docs:    https://code.claude.com/docs/en/remote-control
+# NPM:     https://www.npmjs.com/package/@anthropic-ai/claude-code
+# ----------------------------------------------------------------------
+# LOGIN (1 lần):
+#   docker compose run --rm --entrypoint bash claude-rc
+#   claude auth login
+# FIRST RUN (trả lời Trust / Enable Remote Control):
+#   docker compose run --rm claude-rc
+# START:  docker compose up -d --build --force-recreate --remove-orphans
+# ATTACH: docker attach claude-rc   (Space = QR, thoát: Ctrl+P rồi Ctrl+Q)
+# STOP:   docker compose down --remove-orphans
+#         (thêm -v chỉ khi muốn xóa luôn volume claude-config = mất login)
+# ======================================================================
+
+services:
+  claude-rc:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: claude-rc:latest
+    container_name: claude-rc
+    hostname: claude-docker          # dùng làm prefix tên session tự sinh
+    restart: unless-stopped          # server mode tự thoát sau ~10 phút mất mạng -> tự khởi động lại
+    stdin_open: true                 # cần TTY cho prompt Trust / Enable Remote Control và phím tắt (space = QR)
+    tty: true
+    #network_mode: host
+    #ports:
+    #  - "10024:20128"
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      # CLAUDE_REMOTE_CONTROL_SESSION_NAME_PREFIX: docker
+      # git config
+      GITHUB_USERNAME: ${GITHUB_USERNAME:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    env_file:
+      - .env
+    volumes:
+      - ./data/claude-config:/home/node/.claude   # login, trust, settings, lịch sử session
+      - ./data/workspace:/workspace             # thư mục project (đổi thành đường dẫn repo thật)
+      # - ~/.gitconfig:/home/node/.gitconfig:ro
+      # - ~/.ssh:/home/node/.ssh:ro
+    command:
+      - claude
+      - remote-control
+      - --name
+      - Docker RC
+      - --spawn
+      - same-dir                     # hoặc worktree (workspace phải là git repo)
+      # - --permission-mode
+      # - acceptEdits
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+      - 8.8.8.8
+      - 8.8.4.4
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: 1
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Để kết nối đến localhost của host từ container
+      - "minipc-quyit:192.168.1.200"
+    ulimits:
+      nproc: 65536 # Giới hạn số lượng tiến trình con mà container có thể tạo ra
+      nofile: # Giới hạn số lượng file mà container có thể mở cùng lúc
+        soft: 102400
+        hard: 102400
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50" # Giới hạn 80% CPU
+          memory: "2G" # Giới hạn 3.2GB RAM (80% của 4GB)
+        reservations:
+          memory: "256M" # Đảm bảo container có ít nhất 256MB RAM
+
+    # Logging policy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+#volumes:
+#  claude-config:
