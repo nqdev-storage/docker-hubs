@@ -24,7 +24,7 @@ services:
     #  context: ..
     #  dockerfile: Dockerfile
     #image: claude-rc:latest
-    image: ghcr.io/nqdev-storage/claude-rc:2.1.306-rc4-manual
+    image: ghcr.io/nqdev-storage/claude-rc:2.1.306-rc6-manual
     container_name: claude-rc
     hostname: claude-docker          # dùng làm prefix tên session tự sinh
     restart: unless-stopped          # server mode tự thoát sau ~10 phút mất mạng -> tự khởi động lại
