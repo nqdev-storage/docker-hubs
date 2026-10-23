@@ -39,6 +39,9 @@ ENV VIRTUAL_ENV=/opt/venv \
 RUN mkdir -p /workspace /home/node/.claude \
   && chown -R node:node /workspace /home/node/.claude
 
+# Copy slash commands (vd: /rc-localtunnel) vào thư mục cấu hình Claude Code
+COPY --chown=node:node cfg.claude/commands/ /home/node/.claude/commands/
+
 USER node
 
 # Cấu hình môi trường cho Claude Code và Headless Browser
