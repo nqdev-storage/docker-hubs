@@ -23,17 +23,11 @@ RUN apt-get update \
   chromium fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
   && rm -rf /var/lib/apt/lists/*
 
-# Công cụ mà Claude Code hay dùng khi làm việc với code
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-  git ca-certificates curl tini ripgrep openssh-client less procps \
-  && rm -rf /var/lib/apt/lists/*
-
-# đảm bảo shell tồn tại
+# Đảm bảo shell mặc định là bash
 RUN ln -sf /bin/bash /bin/sh
 
-# Cài Claude Code CLI
-RUN npm install -g @anthropic-ai/claude-code \
+# Cài Claude Code CLI và LocalTunnel toàn cục
+RUN npm install -g @anthropic-ai/claude-code localtunnel \
   && npm cache clean --force
 
 # Python venv dùng chung (tránh lỗi PEP 668 của Debian 12 khi pip install)
@@ -47,15 +41,12 @@ RUN mkdir -p /workspace /home/node/.claude \
 
 USER node
 
-# Gom cả .claude.json và .credentials.json vào 1 thư mục để persist bằng 1 volume
+# Cấu hình môi trường cho Claude Code và Headless Browser
 ENV CLAUDE_CONFIG_DIR=/home/node/.claude \
   CHROME_BIN=/usr/bin/chromium \
   PUPPETEER_SKIP_DOWNLOAD=true \
   PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-
-# KHÔNG đặt CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC / DISABLE_GROWTHBOOK / ANTHROPIC_API_KEY
-# vì Remote Control sẽ không chạy được.
 
 RUN git config --global user.name "${GIT_USER_NAME}" \
   && git config --global user.email "${GIT_USER_EMAIL}" \
