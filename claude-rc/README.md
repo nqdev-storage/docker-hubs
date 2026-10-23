@@ -32,6 +32,16 @@ Image chạy `claude remote-control` (server mode) trong container, điều khi�
 - Venv dùng chung tại `/opt/venv`, đã nằm sẵn trong `PATH` → `pip install ...` chạy thẳng, **không bị lỗi PEP 668** của Debian 12.
 - Owner của venv là user `node` nên không cần `sudo`.
 
+### Slash command dựng sẵn
+
+Thư mục [cfg.claude/commands/](cfg.claude/commands/) được `COPY` vào `/home/node/.claude/commands/` khi build image.
+
+| Lệnh | Mục đích |
+|---|---|
+| `/rc-localtunnel [port \| lệnh chạy app]` | Chạy app ở background, mở `localtunnel` để có URL public cho người dùng review từ xa, **review xong thì tắt cả app lẫn tunnel** (xem [mục 5](#5-public-review-qua-localtunnel)) |
+
+> Nếu mount volume vào `/home/node/.claude`, nội dung `commands/` trong image sẽ bị che — xem phần lưu ý ở [mục 2.3](#23-volume-cần-mount).
+
 ### Khác
 
 - `/bin/sh` được trỏ sang `bash`.
@@ -80,6 +90,10 @@ Copy `.env.example` → `.env` rồi điền giá trị thật (không commit `.
 | `/home/node/.gitconfig` (ro) | Không | Dùng git config của host |
 | `/home/node/.ssh` (ro) | Không | Dùng SSH key của host để push/pull |
 
+> **Slash command bị che bởi volume:** khi bind-mount `./data/claude-config` vào `/home/node/.claude` (như `docker-compose.yml`), thư mục host sẽ che `commands/` đã COPY trong image. Để dùng `/rc-localtunnel`, chọn một trong các cách:
+> - Copy `cfg.claude/commands` vào `data/claude-config/commands` trên host.
+> - Hoặc mount thêm `./cfg.claude/commands:/home/node/.claude/commands:ro`.
+
 ### 2.4 Lệnh khởi động (`ENTRYPOINT` / `CMD`)
 
 ```text
@@ -114,8 +128,11 @@ Có thể ghi đè `CMD` (trong compose là `command:`) với các tham số c�
 | `GIT_USER_EMAIL` | `opencode@quyit.id.vn` | `git config user.email` mặc định |
 
 ```bash
+# Build context phải là thư mục claude-rc/ (Dockerfile COPY cfg.claude/commands/)
 docker build -t claude-rc:latest --build-arg IMAGE_VERSION=2.1.306 .
 ```
+
+> Nếu dùng `build:` trong compose, đặt `context: .` (không phải `..`), nếu không bước `COPY cfg.claude/commands/` sẽ lỗi.
 
 ## 3. Yêu cầu tài khoản (theo docs)
 
@@ -165,7 +182,36 @@ docker attach claude-rc       # xem URL, Space = QR; thoát không tắt contain
 
 Mở **claude.ai/code** hoặc app Claude → tab **Code** → chọn session `Docker RC` (icon máy tính, chấm xanh).
 
-## 5. Vận hành
+## 5. Public review qua localtunnel
+
+Container không publish port, nên khi cần cho người khác xem app đang chạy trong container, dùng slash command `/rc-localtunnel` (gõ trong session Claude trên claude.ai/code hoặc app):
+
+```text
+/rc-localtunnel 3000
+/rc-localtunnel npm run dev -- --port 3000
+/rc-localtunnel                      # Claude tự dò app/port trong project
+```
+
+Claude sẽ:
+
+1. Chạy app ở background (hoặc dùng app đã chạy sẵn), chờ app sẵn sàng.
+2. Chạy `lt --port <port>` và trả về URL `https://xxxx.loca.lt` cùng **tunnel password** (chính là IP public của container, lấy từ `https://loca.lt/mytunnelpassword`; nhập ở trang chặn đầu tiên của loca.lt).
+3. Chờ bạn review.
+4. Khi bạn báo xong → **tắt localtunnel và app** (app chỉ tắt nếu do Claude khởi động), kiểm tra port đã được giải phóng.
+
+Lưu ý:
+- Tunnel là **công khai**: ai có URL + password đều truy cập được. Không dùng cho app chứa dữ liệu nhạy cảm mà không có đăng nhập.
+- Dev server có kiểm tra host (Vite `allowedHosts`, webpack...) cần cho phép `*.loca.lt`.
+- Chỉ tunnel đúng port của app cần review, không tunnel DB/SSH.
+
+Dùng tay (không qua slash command):
+
+```bash
+docker compose exec claude-rc bash
+lt --port 3000            # in ra URL; Ctrl+C để tắt tunnel
+```
+
+## 6. Vận hành
 
 | Việc | Lệnh |
 |---|---|
@@ -178,7 +224,7 @@ Mở **claude.ai/code** hoặc app Claude → tab **Code** → chọn session `D
 - Khi container restart, `claude remote-control` **mang lại các session cũ** nếu trong ~4 giờ (cùng thư mục, volume config còn nguyên).
 - Server mode tự thoát sau ~10 phút mất mạng; `restart: unless-stopped` sẽ dựng lại.
 
-## 6. Lưu ý
+## 7. Lưu ý
 
 - **Quyền file**: container chạy user `node` (UID 1000). Nếu thư mục host thuộc UID khác, `chown 1000:1000` hoặc build lại với user phù hợp.
 - **Git trong container**: mount `~/.gitconfig` và `~/.ssh` (read-only) nếu muốn Claude commit/push.
