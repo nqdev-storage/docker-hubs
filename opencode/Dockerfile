@@ -2,7 +2,7 @@
 # https://github.com/anomalyco/opencode/pkgs/container/opencode
 # FROM ghcr.io/anomalyco/opencode:1.17.18
 # FROM ghcr.io/anomalyco/opencode:1.18.33
-FROM ghcr.io/anomalyco/opencode:2.0.22
+FROM ghcr.io/anomalyco/opencode:2.1.4
 
 ARG IMAGE_VERSION
 LABEL version="${IMAGE_VERSION}" \
