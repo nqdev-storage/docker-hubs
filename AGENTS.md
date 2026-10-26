@@ -13,7 +13,10 @@ This repository contains a custom Docker image and compose setup for **OpenCode*
 ## Key Directories
 - `opencode/`: Contains the Dockerfile, docker-compose.yml, and other OpenCode-specific configurations.
 - `playwright-mcp/`: Contains Docker configuration for a dedicated Playwright MCP server.
-- `.github/workflows/`: CI/CD pipeline definitions.
+- `claude-rc/`: Docker image + compose for Claude Code Remote Control (`claude remote-control`, published as `ghcr.io/nqdev-storage/claude-rc`). Base `node:22-bookworm-slim`, runs as user `node`, ships claude-memory-hub, localtunnel, bun, Chromium. `include/` is copied into the image (one sub-dir per `COPY`). Details in `claude-rc/README.md`.
+- `docs/`: Business-facing docs (`BUSINESS.md`).
+- `.claude/rules/code-rules.md`: Agent policies (testing, comment label, DB execution, git commit).
+- `.github/workflows/`: CI/CD pipeline definitions (one publish workflow per image: opencode, playwright-mcp, claude-rc).
 
 ## Essential Commands
 
@@ -46,4 +49,6 @@ The setup involves a main OpenCode service container and potentially a separate 
 
 ## Known Gotchas & Constraints
 - The main OpenCode container runs as `root` and is `privileged: true`, indicating a need for elevated system access, likely for network interception (MITM) capabilities.
+- `claude-rc` bind-mounts `./data/claude-config` and `./data/claude-memory-hub` over image paths, hiding the baked-in `settings.json`, hooks and runtime until `data/` is seeded from `include/` (see `claude-rc/README.md` §5.0). Never set Anthropic API keys/base URL in its `.env` — Remote Control requires `claude auth login`.
+- Image versions live in per-directory `VERSION` files (plus root `.version.txt`); compose image tags carry an `-rcN` build suffix.
 - Local development requires a `.env` file with `OPENCODE_SERVER_USERNAME` and `OPENCODE_SERVER_PASSWORD`.

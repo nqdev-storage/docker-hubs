@@ -1,2 +1,4 @@
 .env
 *.local.json
+*.share.json
+dev.local.json
