@@ -1,0 +1,12 @@
+{
+  "tag_stripping": true,
+  "auto_detect_secrets": true,
+  "ignored_paths": [
+    "**/.ssh/**",
+    "**/.git-credentials",
+    "**/.npmrc"
+  ],
+  "custom_patterns": [
+    "github_pat_[A-Za-z0-9_]{50,}"
+  ]
+}

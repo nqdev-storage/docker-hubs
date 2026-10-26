@@ -1,0 +1,69 @@
+{
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true",
+    "DISABLE_TELEMETRY": "1"
+  },
+  "tui": "fullscreen",
+  "theme": "dark",
+  "autoUpdatesChannel": "latest",
+  "enableArtifact": true,
+  "enableWorkflows": true,
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bun run /home/node/.claude-memory-hub/dist/hooks/session-start.js" }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bun run /home/node/.claude-memory-hub/dist/hooks/user-prompt-submit.js" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bun run /home/node/.claude-memory-hub/dist/hooks/post-tool-use.js" }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bun run /home/node/.claude-memory-hub/dist/hooks/pre-compact.js" }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bun run /home/node/.claude-memory-hub/dist/hooks/post-compact.js" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bun run /home/node/.claude-memory-hub/dist/hooks/stop.js" }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bun run /home/node/.claude-memory-hub/dist/hooks/session-end.js" }
+        ]
+      }
+    ]
+  }
+}

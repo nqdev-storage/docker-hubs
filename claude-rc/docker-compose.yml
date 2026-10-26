@@ -15,7 +15,7 @@
 # START:  docker compose up -d --build --force-recreate --remove-orphans
 # ATTACH: docker attach claude-rc   (Space = QR, thoát: Ctrl+P rồi Ctrl+Q)
 # STOP:   docker compose down --remove-orphans
-#         (thêm -v chỉ khi muốn xóa luôn volume claude-config = mất login)
+#         (thêm -v chỉ khi muốn xóa luôn volume = mất login / mất bộ nhớ claude-memory-hub)
 # ======================================================================
 
 services:
@@ -44,6 +44,9 @@ services:
     volumes:
       - ./data/claude-config:/home/node/.claude   # login, trust, settings, lịch sử session
       - ./data/workspace:/workspace             # thư mục project (đổi thành đường dẫn repo thật)
+      # Named volume (không dùng bind mount): lần đầu Docker tự chép runtime claude-memory-hub đã cài trong image vào volume,
+      # các lần sau giữ nguyên DB bộ nhớ khi recreate container. Bind mount thư mục rỗng sẽ che mất runtime.
+      - ./data/claude-memory-hub:/home/node/.claude-memory-hub
       # - ~/.gitconfig:/home/node/.gitconfig:ro
       # - ~/.ssh:/home/node/.ssh:ro
     command:
@@ -85,5 +88,6 @@ services:
         max-size: "10m"
         max-file: "5"
 
-#volumes:
-#  claude-config:
+# volumes:
+#   claude-memory-hub:
+#   claude-config:
