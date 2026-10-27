@@ -31,6 +31,13 @@ Mục lục: [1. Trong image có gì](#1-trong-image-có-gì) · [2. Cấu hình
 | `localtunnel` | Tunnel public (`lt --port ...`) để người khác review app trong container |
 | `bun` | Bun runtime, cung cấp `bun` và `bunx` |
 
+### Java & Maven
+
+- JDK **Temurin 17** (`/opt/java/openjdk`) và **Maven 3.9.6** (`/usr/share/maven`), lấy từ image `maven:3.9.6-eclipse-temurin-17` bằng multi-stage build; `java`, `javac`, `mvn` đã nằm trong `PATH`.
+- Biến: `JAVA_HOME=/opt/java/openjdk`, `MAVEN_HOME=/usr/share/maven`.
+- Local repository của Maven ở `/home/node/.m2` (thuộc user `node`). Muốn giữ cache dependency qua các lần recreate container, mount `./data/m2:/home/node/.m2`.
+- Cần JDK khác (8/11/21): đổi tag ở dòng `FROM maven:... AS maven-src` đầu Dockerfile.
+
 ### Python
 
 Venv dùng chung ở `/opt/venv`, đã nằm trong `PATH`, owner là `node` → `pip install ...` chạy thẳng, không dính lỗi PEP 668 của Debian 12, không cần `sudo`.
@@ -45,6 +52,18 @@ Venv dùng chung ở `/opt/venv`, đã nằm trong `PATH`, owner là `node` → 
 - Rule che secret: [include/claude-memory-hub/privacy.json](include/claude-memory-hub/privacy.json)
 
 Kiểm tra trong container: `bunx claude-memory-hub doctor`.
+
+### MCP server cài sẵn: Context7
+
+[Context7](https://context7.com) cung cấp tài liệu API mới nhất của framework/thư viện (Next.js, Tailwind, React, ...) để Claude không sinh code theo API cũ. Cài lúc build bằng:
+
+```bash
+claude mcp add --scope user --transport http context7 https://mcp.context7.com/mcp
+```
+
+- Là MCP **remote qua HTTP**: không chạy process nào trong container, chỉ cần outbound HTTPS.
+- Dùng không cần API key (có giới hạn tốc độ). Muốn nâng giới hạn: lấy key ở context7.com rồi thêm `--header "CONTEXT7_API_KEY: <key>"` khi chạy lại lệnh trên (đừng ghi key vào Dockerfile/repo).
+- Kiểm tra trong container: `claude mcp list`. Nếu không thấy `context7` (cấu hình user bị bind mount `./data/claude-config` che), chạy lại lệnh `claude mcp add` ở trên bên trong container.
 
 ### Slash command riêng của image
 
@@ -82,6 +101,7 @@ Kiểm tra trong container: `bunx claude-memory-hub doctor`.
 | `NPM_CONFIG_LOGLEVEL` | `error` | Giảm log npm |
 | `CLAUDE_CONFIG_DIR` | `/home/node/.claude` | Login, trust, settings, lịch sử session |
 | `VIRTUAL_ENV` | `/opt/venv` | Python venv (đã vào `PATH`) |
+| `JAVA_HOME`, `MAVEN_HOME` | `/opt/java/openjdk`, `/usr/share/maven` | JDK 17 và Maven 3.9.6 (đã vào `PATH`) |
 | `CHROME_BIN`, `PUPPETEER_EXECUTABLE_PATH` | `/usr/bin/chromium` | Dùng Chromium hệ thống |
 | `PUPPETEER_SKIP_DOWNLOAD` / `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` | `true` / `1` | Không tải browser riêng |
 

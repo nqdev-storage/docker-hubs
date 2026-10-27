@@ -1,3 +1,6 @@
+# [nqdev] Stage lấy sẵn JDK 17 (Temurin) + Maven 3.9.6 từ image chính thức, tránh phải tải/giải nén thủ công
+FROM maven:3.9.6-eclipse-temurin-17 AS maven-src
+
 FROM node:22-bookworm-slim
 
 ARG IMAGE_VERSION=dev \
@@ -23,6 +26,13 @@ RUN apt-get update \
   chromium fonts-liberation fonts-noto-color-emoji fonts-noto-cjk \
   && rm -rf /var/lib/apt/lists/*
 
+# [nqdev] Java 17 + Maven 3.9.6 (cùng glibc/Debian nên chạy được trên base node bookworm)
+COPY --from=maven-src /opt/java/openjdk /opt/java/openjdk
+COPY --from=maven-src /usr/share/maven /usr/share/maven
+ENV JAVA_HOME=/opt/java/openjdk \
+  MAVEN_HOME=/usr/share/maven \
+  PATH="/opt/java/openjdk/bin:/usr/share/maven/bin:$PATH"
+
 # Đảm bảo shell mặc định là bash
 RUN ln -sf /bin/bash /bin/sh
 
@@ -36,8 +46,8 @@ ENV VIRTUAL_ENV=/opt/venv \
   PATH="/opt/venv/bin:$PATH"
 
 # Thư mục làm việc + thư mục cấu hình (sẽ được mount volume)
-RUN mkdir -p /workspace /home/node/.claude \
-  && chown -R node:node /workspace /home/node/.claude
+RUN mkdir -p /workspace /home/node/.claude /home/node/.m2 \
+  && chown -R node:node /workspace /home/node/.claude /home/node/.m2
 
 # include/ = nội dung được copy vào image theo công dụng, mỗi thư mục con ứng với một đích:
 #   include/.claude/             -> /home/node/.claude/            (cấu hình Claude Code global: commands, settings.json, ...)
@@ -57,6 +67,9 @@ ENV CLAUDE_CONFIG_DIR=/home/node/.claude \
 RUN git config --global user.name "${GIT_USER_NAME}" \
   && git config --global user.email "${GIT_USER_EMAIL}" \
   && git config --global --add safe.directory /workspace
+
+# [nqdev] Context7 (MCP remote qua HTTP, không chạy gì trong container) để Claude lấy tài liệu thư viện mới nhất, tránh sinh code theo API cũ
+RUN claude mcp add --scope user --transport http context7 https://mcp.context7.com/mcp
 
 # Cài sẵn claude-memory-hub vào ~/.claude (MCP server + hooks trong settings.json + slash command mem-*)
 # và ~/.claude-memory-hub (runtime + DB). Cần bun (đã cài ở trên).
