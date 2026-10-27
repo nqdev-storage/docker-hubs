@@ -19,9 +19,9 @@ Mục lục: [1. Trong image có gì](#1-trong-image-có-gì) · [2. Cấu hình
 | Git & mạng | `git`, `curl`, `ca-certificates`, `openssh-client` | Clone/push, tải file, SSH |
 | Tiện ích | `ripgrep` (`rg`), `jq`, `less`, `procps`, `unzip` | `rg` là công cụ search Claude Code ưu tiên dùng |
 | Init | `tini` | PID 1: dọn zombie process, chuyển tiếp signal |
-| Python | `python3`, `python3-dev`, `python3-pip`, `python3-venv`, `build-essential` | Build được package native |
+| Python | `python3`, `python3-pip`, `python3-venv` | Không có `build-essential`/`python3-dev` (giảm size): package Python phải build từ source sẽ lỗi. Cần thì thêm hai gói đó vào dòng `apt-get install` trong Dockerfile rồi build lại |
 | Trình duyệt | `chromium` | Headless browser (scraping, test, screenshot) |
-| Font | `fonts-liberation`, `fonts-noto-color-emoji`, `fonts-noto-cjk` | Chữ Latin, emoji, Trung/Nhật/Hàn |
+| Font | `fonts-liberation`, `fonts-noto-color-emoji` | Chữ Latin và emoji. Không có `fonts-noto-cjk` (giảm size) nên Chromium không hiển thị chữ Trung/Nhật/Hàn |
 
 ### Công cụ npm (global)
 
@@ -31,12 +31,21 @@ Mục lục: [1. Trong image có gì](#1-trong-image-có-gì) · [2. Cấu hình
 | `localtunnel` | Tunnel public (`lt --port ...`) để người khác review app trong container |
 | `bun` | Bun runtime, cung cấp `bun` và `bunx` |
 
-### Java & Maven
+### Java & Maven (không cài sẵn, cài khi cần)
 
-- JDK **Temurin 17** (`/opt/java/openjdk`) và **Maven 3.9.6** (`/usr/share/maven`), lấy từ image `maven:3.9.6-eclipse-temurin-17` bằng multi-stage build; `java`, `javac`, `mvn` đã nằm trong `PATH`.
-- Biến: `JAVA_HOME=/opt/java/openjdk`, `MAVEN_HOME=/usr/share/maven`.
-- Local repository của Maven ở `/home/node/.m2` (thuộc user `node`). Muốn giữ cache dependency qua các lần recreate container, mount `./data/m2:/home/node/.m2`.
-- Cần JDK khác (8/11/21): đổi tag ở dòng `FROM maven:... AS maven-src` đầu Dockerfile.
+Để giảm kích thước image, Java và Maven **không** có sẵn. Khi cần, chạy script (trong container, không cần root):
+
+```bash
+10-install-java-maven.sh              # JDK 17 (Temurin) + Maven 3.9.6
+10-install-java-maven.sh java         # chỉ Java
+10-install-java-maven.sh maven        # chỉ Maven
+JAVA_VERSION=21 MAVEN_VERSION=3.9.9 10-install-java-maven.sh   # phiên bản khác
+```
+
+- Tự cài khi khởi động: đặt `INSTALL_JAVA_MAVEN=true` trong `.env` (mặc định `false`); `00-entrypoint.sh` sẽ gọi script trước khi chạy lệnh chính. Lần đầu tải khá lâu (Java ~320MB) và khởi động chậm hơn; nếu cài lỗi (vd mất mạng) chỉ cảnh báo, không chặn khởi động. Mount `./data/opt:/home/node/.local/opt` để các lần sau bỏ qua bước tải.
+- Script tải Temurin từ Adoptium và Maven từ Apache (có kiểm tra SHA-512), cài vào `/home/node/.local/opt/java` và `/home/node/.local/opt/maven`, chạy lại thì bỏ qua nếu đã đủ phiên bản.
+- Image đã đặt sẵn `JAVA_HOME`, `MAVEN_HOME` và `PATH` trỏ tới hai thư mục trên, nên cài xong dùng `java`, `mvn` ngay. Khi chưa cài, `JAVA_HOME` trỏ vào thư mục chưa tồn tại (vô hại nếu bạn không dùng Java).
+- Cài vào lớp ghi của container nên **mất khi recreate container**. Muốn giữ: mount `./data/opt:/home/node/.local/opt` (cache Maven ở `~/.m2`, mount thêm `./data/m2:/home/node/.m2` nếu cần).
 
 ### Python
 
@@ -101,7 +110,8 @@ claude mcp add --scope user --transport http context7 https://mcp.context7.com/m
 | `NPM_CONFIG_LOGLEVEL` | `error` | Giảm log npm |
 | `CLAUDE_CONFIG_DIR` | `/home/node/.claude` | Login, trust, settings, lịch sử session |
 | `VIRTUAL_ENV` | `/opt/venv` | Python venv (đã vào `PATH`) |
-| `JAVA_HOME`, `MAVEN_HOME` | `/opt/java/openjdk`, `/usr/share/maven` | JDK 17 và Maven 3.9.6 (đã vào `PATH`) |
+| `INSTALL_JAVA_MAVEN` | `false` | `true` thì entrypoint tự chạy `10-install-java-maven.sh` lúc khởi động (xem mục Java & Maven) |
+| `JAVA_HOME`, `MAVEN_HOME` | `/home/node/.local/opt/java`, `/home/node/.local/opt/maven` | Nơi `10-install-java-maven.sh` cài vào (đã vào `PATH`, chỉ có hiệu lực sau khi cài) |
 | `CHROME_BIN`, `PUPPETEER_EXECUTABLE_PATH` | `/usr/bin/chromium` | Dùng Chromium hệ thống |
 | `PUPPETEER_SKIP_DOWNLOAD` / `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` | `true` / `1` | Không tải browser riêng |
 
@@ -128,14 +138,18 @@ Copy `.env.example` → `.env`, điền giá trị thật (không commit `.env`)
 | `/home/node/.claude-memory-hub` | Khuyến nghị | Runtime + DB của claude-memory-hub (giữ bộ nhớ qua các lần recreate) |
 | `/home/node/.gitconfig` (ro), `/home/node/.ssh` (ro) | Không | Dùng git config / SSH key của host |
 
-> ⚠️ **Bind mount che nội dung trong image.** `docker-compose.yml` bind-mount `./data/claude-config` → `/home/node/.claude` và `./data/claude-memory-hub` → `/home/node/.claude-memory-hub`. Hai thư mục host trống sẽ che mất `settings.json`, `commands/`, hook, runtime và `privacy.json` đã nằm trong image, nên **lần đầu phải khởi tạo** (xem [5.0](#50-khởi-tạo-data-lần-đầu)). Muốn Docker tự chép nội dung từ image khi volume còn trống, dùng named volume thay cho bind mount.
+> **Bind mount che nội dung trong image.** `docker-compose.yml` bind-mount `./data/claude-config` → `/home/node/.claude` và `./data/claude-memory-hub` → `/home/node/.claude-memory-hub`, nên hai thư mục host trống sẽ che mất `settings.json`, `commands/`, hook, runtime và `privacy.json` trong image. Bản gốc được lưu ở `/home/node/.image-defaults/` và [scripts/00-entrypoint.sh](scripts/00-entrypoint.sh) **tự chép phần còn thiếu** vào thư mục đã mount mỗi lần container khởi động (không ghi đè file đã có, nên login, settings bạn sửa và DB được giữ nguyên). Muốn cập nhật một file mặc định thì xóa file đó trong `data/` rồi restart.
+>
+> Lưu ý: cấu hình MCP của Context7 nằm ở cấu hình user của Claude Code, chưa được script này chép; xem mục Context7.
 
 ### 2.4 Lệnh khởi động
 
 ```text
-ENTRYPOINT ["/usr/bin/tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/opt/scripts/00-entrypoint.sh"]
 CMD ["claude", "remote-control", "--name", "Docker RC"]
 ```
+
+`00-entrypoint.sh` chạy dưới `tini` (vẫn là PID 1): (1) chép bổ sung file mặc định vào thư mục bind mount, (2) nếu thiếu runtime claude-memory-hub thì chạy `bunx claude-memory-hub@latest install` (lỗi, ví dụ mất mạng, thì chỉ cảnh báo chứ không chặn khởi động), (3) nếu `INSTALL_JAVA_MAVEN=true` thì chạy `10-install-java-maven.sh` (lỗi chỉ cảnh báo), (4) `exec` lệnh CMD. Chạy shell nhưng vẫn qua entrypoint: `docker compose run --rm claude-rc bash` (không dùng `--entrypoint bash` vì sẽ bỏ qua bước khởi tạo).
 
 Ghi đè `CMD` (compose: `command:`) với các tham số của `claude remote-control`:
 
@@ -178,6 +192,7 @@ Nếu dùng `build:` trong compose hoặc GitHub Actions: `context: claude-rc`, 
 |---|---|---|
 | `include/.claude/` | `/home/node/.claude/` | `commands/rc-localtunnel.md`, `settings.json` |
 | `include/claude-memory-hub/` | `/home/node/.claude-memory-hub/` | `privacy.json` |
+| `scripts/` (ngoài `include/`) | `/opt/scripts/` (chmod 755, nằm trong `PATH`) | Script chạy hoặc cần để chạy trong image, gọi thẳng theo tên: `10-install-java-maven.sh` |
 
 Thứ tự trong Dockerfile: `include/.claude/` copy **trước** `install` của claude-memory-hub (để `install` gộp hook/MCP vào `settings.json` có sẵn); `include/claude-memory-hub/` copy **sau** `install`.
 
@@ -201,24 +216,17 @@ Thêm thư mục mới: tạo `include/<tên>/` rồi thêm một dòng `COPY --
 ```bash
 cp .env.example .env                                  # điền giá trị thật
 mkdir -p data/workspace data/claude-config data/claude-memory-hub
-cp -r include/.claude/. data/claude-config/           # settings.json + commands (bind mount che bản trong image)
-cp -r include/claude-memory-hub/. data/claude-memory-hub/
 ```
 
-Sau khi login (bước 1) và vào shell container, cài lại runtime vào thư mục đã mount (hook trỏ tới `~/.claude-memory-hub/dist/hooks/*.js`):
-
-```bash
-bunx claude-memory-hub@latest install
-```
+`settings.json`, commands, hook và runtime claude-memory-hub sẽ được `00-entrypoint.sh` tự chép vào `data/` ở lần chạy đầu, không cần làm tay.
 
 ### Bước 1. Đăng nhập (một lần)
 
 Mở shell bash trong container rồi login bên trong (chạy thẳng `claude auth login` qua `docker compose run` dễ lỗi `Login failed: Request failed with status code 400` khi dán code):
 
 ```bash
-docker compose run --rm --entrypoint bash claude-rc
+docker compose run --rm claude-rc bash
 claude auth login                                     # chọn claude.ai → mở URL → dán code
-bunx claude-memory-hub@latest install                 # chỉ lần đầu / khi cập nhật memory-hub
 exit
 ```
 

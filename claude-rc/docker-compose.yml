@@ -8,7 +8,7 @@
 # NPM:     https://www.npmjs.com/package/@anthropic-ai/claude-code
 # ----------------------------------------------------------------------
 # LOGIN (1 lần):
-#   docker compose run --rm --entrypoint bash claude-rc
+#   docker compose run --rm claude-rc bash
 #   claude auth login
 # FIRST RUN (trả lời Trust / Enable Remote Control):
 #   docker compose run --rm claude-rc
