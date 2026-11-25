@@ -59,7 +59,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: IMAGE_VERSION=${{ steps.version.outputs.VERSION }}-rc${{ github.run_number }}
+          build-args: |
+            IMAGE_VERSION=${{ steps.version.outputs.VERSION }}-rc${{ github.run_number }}
+            CLAUDE_CODE_VERSION=${{ steps.version.outputs.VERSION }}
           cache-from: type=registry,ref=${{ env.GHCR_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.GHCR_IMAGE }}:buildcache,mode=max
           platforms: linux/amd64
