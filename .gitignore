@@ -221,3 +221,6 @@ analysis_results/*
 
 # Thư mục chứa dữ liệu và logs của OpenCode, không cần thiết để đưa lên GitHub
 opencode/data/*
+
+# Dữ liệu runtime của claude-rc (login Claude, cấu hình, bộ nhớ claude-memory-hub)
+claude-rc/data/*

@@ -1,82 +1,100 @@
 # docker-hubs
 
-Custom Docker image + compose setup for [OpenCode](https://github.com/anomalyco/opencode) — self-hosted AI code tool router. Extends the base image with Python, Node.js, Chromium, Playwright MCP, and CLI tools.
+Tập hợp Docker image + compose tự dựng cho các công cụ AI coding, publish lên GHCR (`ghcr.io/nqdev-storage/*`). Mỗi image nằm trong một thư mục riêng, có `Dockerfile`, `docker-compose.yml`, `VERSION` và README chi tiết.
 
-## Quick start
+| Image | Mục đích | Version | Port host → container | Chi tiết |
+|---|---|---|---|---|
+| [`opencode`](opencode/) | [OpenCode](https://opencode.ai) server/web UI, thêm Python, Node.js, Chromium, Git và MCP Playwright | `2.4.1` | `10026 → 4096` | [opencode/README.md](opencode/README.md) |
+| [`playwright-mcp`](playwright-mcp/) | MCP server Playwright độc lập (browser automation qua HTTP) | `1.40.0` | `40001 → 8931` | [playwright-mcp/README.md](playwright-mcp/README.md) |
+| [`claude-rc`](claude-rc/) | Claude Code Remote Control (`claude remote-control`), điều khiển từ claude.ai/code hoặc app Claude | `2.1.332` | Không publish port (chỉ cần outbound 443) | [claude-rc/README.md](claude-rc/README.md) |
+
+Version lấy từ file `VERSION` trong từng thư mục; tag image thực tế có thêm hậu tố build `-rcN` (xem [Publish image](#publish-image)).
+
+## Chạy nhanh
+
+Yêu cầu: Docker + Docker Compose. Lệnh chạy **trong thư mục của image**.
+
+### opencode
 
 ```bash
-# Prerequisites: .env file with OPENCODE_SERVER_USERNAME / OPENCODE_SERVER_PASSWORD
+cd opencode
+cp .env.example .env        # đổi OPENCODE_SERVER_USERNAME / OPENCODE_SERVER_PASSWORD
+docker-compose up -d --force-recreate --remove-orphans
 
-# Build & start
-docker-compose -f opencode/docker-compose.yml up -d --build --force-recreate --remove-orphans
-
-# Open: http://localhost:10026
-
-# Shell
-docker exec -it opencode-10026 script -q -c "bash"
-
-# Stop
-docker-compose -f opencode/docker-compose.yml down -v --remove-orphans
+# Web UI: http://localhost:10026
+docker exec -it opencode-10029 script -q -c "bash"   # vào shell
+docker logs opencode-10029 -f                       # xem log
+docker-compose down --remove-orphans                # dừng
 ```
 
-## Architecture
+`docker-compose.yml` kéo image dựng sẵn trên GHCR, không build local. Container chạy `root` + `privileged: true` (cần cho MITM mạng).
 
-```
-opencode/
-  VERSION             # Current version (1.17.11)
-  Dockerfile          # FROM ghcr.io/anomalyco/opencode:1.17.11
-                      # Adds: python3, nodejs, git, chromium, curl, bash
-                      # MCP config: playwright (local) + slim-tools (remote)
-  docker-compose.yml  # Port 10026:4096, privileged, 4 CPU / 8G RAM
+### playwright-mcp
 
-.github/workflows/
-  opencode-docker-publish.yml   # Tag push v* → GHCR
-  changelog.yml                 # Tag push v* → CHANGELOG-NQDEV.md
+```bash
+cd playwright-mcp
+docker-compose up -d --build --force-recreate --remove-orphans
+curl http://localhost:40001/mcp
 ```
 
-**Container**: `opencode-10026` — privileged (MITM networking), Cloudflare DNS, persistent volumes for config/data.
+Compose này **build local** từ `Dockerfile` (có thêm biến thể `Dockerfile.ultra-slim`, `Dockerfile.advanced-slim`).
 
-**MCP tools** baked into image:
-- **playwright** — browser automation via `@playwright/mcp@latest`, headless Chromium
-- **slim-tools** — remote web search/fetch via `https://slim.tools/mcp`
+### claude-rc
 
-## Configuration
+Lần đầu cần khởi tạo `data/` và đăng nhập `claude auth login`; làm theo [claude-rc/README.md §5](claude-rc/README.md#5-chạy-nhanh). Sau đó:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OPENCODE_SERVER_USERNAME` | `opencode` | Web UI username |
-| `OPENCODE_SERVER_PASSWORD` | `password` | Web UI password |
+```bash
+cd claude-rc
+cp .env.example .env
+docker-compose up -d
+```
 
-Create `.env` file in `opencode/` or repo root.
+> Không đặt API key / base URL của Anthropic trong `.env`: Remote Control bắt buộc đăng nhập bằng tài khoản.
 
-## Publishing
+> **Cẩn thận với `down -v`**: xoá volume đồng nghĩa mất dữ liệu (login, cấu hình, bộ nhớ claude-memory-hub). Chỉ dùng khi chủ động muốn reset.
 
-Trigger: `git tag v* && git push --tags` or manual `workflow_dispatch`.
+## Publish image
 
-- **GHCR**: `ghcr.io/nqdev-outsource/opencode` (active)
-- **Docker Hub**: `quyit/opencode` (currently disabled)
-- **Tags**: `{VERSION}-rc{RUN}-manual` (manual) or `{VERSION}-rc{RUN}` + `latest` (tag push)
+Mỗi image có một workflow GitHub Actions riêng, hiện **chỉ chạy tay** (`workflow_dispatch`, trigger theo tag `v*` đang tắt):
 
-## Project structure
+| Workflow | Image |
+|---|---|
+| [opencode-docker-publish.yml](.github/workflows/opencode-docker-publish.yml) | `ghcr.io/nqdev-storage/opencode` |
+| [playwright-mcp-docker-publish.yml](.github/workflows/playwright-mcp-docker-publish.yml) | `ghcr.io/nqdev-storage/playwright-mcp` |
+| [claude-rc-docker-publish.yml](.github/workflows/claude-rc-docker-publish.yml) | `ghcr.io/nqdev-storage/claude-rc` |
+
+- Version đọc từ `<image>/VERSION`.
+- Tag khi chạy tay: `{VERSION}-rc{RUN_NUMBER}-manual`. Khi bật lại trigger tag: `{VERSION}-rc{RUN_NUMBER}` + `latest`.
+- Docker Hub (`quyit/*`) đang tắt trong workflow.
+- Sau khi publish, cập nhật tag `image:` trong `docker-compose.yml` tương ứng.
+
+[changelog.yml](.github/workflows/changelog.yml) chạy khi push tag `v*` (hoặc chạy tay) và cập nhật [CHANGELOG-NQDEV.md](CHANGELOG-NQDEV.md).
+
+## Cấu trúc repo
 
 ```
 docker-hubs/
-├── opencode/
-│   ├── VERSION              # Source of truth for version
-│   ├── Dockerfile           # Image definition
-│   ├── docker-compose.yml   # Container orchestration
-│   └── data/                # Persistent volumes (gitignored)
+├── opencode/          # Image OpenCode (Dockerfile, compose, preload/, data/)
+├── playwright-mcp/    # Image Playwright MCP (3 biến thể Dockerfile)
+├── claude-rc/         # Image Claude Code Remote Control (include/, scripts/, data/)
+├── docs/              # Tài liệu nghiệp vụ (BUSINESS.md)
+├── plans/             # Execution plan / nhật ký công việc
 ├── .github/
-│   ├── workflows/           # CI/CD pipelines
-│   └── actions/set-version/ # Composite action (reads root VERSION)
-├── docs/
-│   └── BUSINESS.md          # Business process documentation
-└── README.md
+│   ├── workflows/     # Publish image + changelog
+│   └── actions/set-version/
+├── .version.txt       # Version chung của repo
+├── AGENTS.md          # Kiến thức dự án cho AI agent / dev mới
+└── CHANGELOG-NQDEV.md
 ```
 
-## Known issues
+Thư mục `data/` trong từng image là volume runtime (chứa login, cấu hình, bộ nhớ). Không commit thư mục này.
 
-- Docker Hub publish commented out in workflow
-- `docker-compose.yml` image tag (`1.17.9`) out of sync with `opencode/VERSION` (`1.17.11`)
-- `set-version` action reads root `VERSION`, not `opencode/VERSION`
-- Changelog workflow pushes directly to default branch (no PR)
+## Đóng góp
+
+- Đọc [AGENTS.md](AGENTS.md) trước khi sửa: kiến trúc, lệnh, lưu ý.
+- Quy tắc cho agent (comment, commit, test compose): [.claude/rules/code-rules.md](.claude/rules/code-rules.md).
+- Kiểm tra compose trước khi báo xong: `docker compose config` rồi build/chạy thử.
+
+## License
+
+Apache License 2.0, xem [LICENSE](LICENSE).
