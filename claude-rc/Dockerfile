@@ -36,7 +36,8 @@ ENV INSTALL_JAVA_MAVEN=false \
 RUN ln -sf /bin/bash /bin/sh
 
 # Cài Claude Code CLI, LocalTunnel và Bun (cung cấp bun + bunx) toàn cục
-RUN npm install -g @anthropic-ai/claude-code localtunnel bun \
+# [nqdev] Ghim theo CLAUDE_CODE_VERSION (CI truyền từ file VERSION): đổi version là vỡ cache layer, không ghim thì build cache giữ bản cũ
+RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION} localtunnel bun \
   && npm cache clean --force
 
 # Python venv dùng chung (tránh lỗi PEP 668 của Debian 12 khi pip install)

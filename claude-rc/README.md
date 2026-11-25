@@ -27,7 +27,7 @@ Mục lục: [1. Trong image có gì](#1-trong-image-có-gì) · [2. Cấu hình
 
 | Package | Mục đích |
 |---|---|
-| `@anthropic-ai/claude-code` | Claude Code CLI (`claude`). Lấy bản mới nhất tại thời điểm build (không ghim phiên bản) |
+| `@anthropic-ai/claude-code` | Claude Code CLI (`claude`). Phiên bản theo build arg `CLAUDE_CODE_VERSION` (CI lấy từ file `VERSION`; build tay không truyền thì `latest`) |
 | `localtunnel` | Tunnel public (`lt --port ...`) để người khác review app trong container |
 | `bun` | Bun runtime, cung cấp `bun` và `bunx` |
 
@@ -183,7 +183,7 @@ Ghi đè `CMD` (compose: `command:`) với các tham số của `claude remote-c
 **Build tay** (chạy trong thư mục `claude-rc/`, vì build context phải là thư mục này do Dockerfile `COPY include/...` và `COPY scripts/...`):
 
 ```bash
-docker build -t claude-rc:latest --build-arg IMAGE_VERSION=$(cat VERSION) .
+docker build -t claude-rc:latest --build-arg IMAGE_VERSION=$(cat VERSION) --build-arg CLAUDE_CODE_VERSION=$(cat VERSION) .
 ```
 
 | Build arg | Mặc định | Ý nghĩa |
@@ -191,8 +191,9 @@ docker build -t claude-rc:latest --build-arg IMAGE_VERSION=$(cat VERSION) .
 | `IMAGE_VERSION` | `dev` | Label `version` |
 | `GIT_USER_NAME` | `OpenCode v2` | `git config user.name` mặc định |
 | `GIT_USER_EMAIL` | `opencode@quyit.id.vn` | `git config user.email` mặc định |
+| `CLAUDE_CODE_VERSION` | `latest` | Phiên bản `@anthropic-ai/claude-code`; truyền số cụ thể (vd `$(cat VERSION)`) để đổi version là vỡ cache layer cài đặt |
 
-(`CLAUDE_CODE_VERSION` có trong Dockerfile nhưng chưa được dùng; Claude Code luôn lấy `latest`.) Nếu dùng `build:` trong compose: `context: .` khi đặt compose trong `claude-rc/`.
+Nếu dùng `build:` trong compose: `context: .` khi đặt compose trong `claude-rc/`.
 
 Build cần `COPY --chmod` (BuildKit), mặc định có trong Docker hiện nay.
 
