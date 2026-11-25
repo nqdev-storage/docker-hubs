@@ -47,13 +47,14 @@ Giữ nguyên: `docker-compose.yml` vẫn trỏ image `ghcr.io/nqdev-storage/cla
 
 ## 4. Trạng thái hiện tại
 
-Chưa commit. Đã verify bằng build local (`claude-rc:test` → `2.1.332`). CI chưa chạy với thay đổi này.
+Đã commit `d0fd8f5` và push lên `develop`. CI chạy tay (`workflow_dispatch`, workflow không tự chạy khi push) đã build image `ghcr.io/nqdev-storage/claude-rc:2.1.332-rc11-manual`. `docker-compose.yml` đã trỏ sang tag này.
 
 ## 5. Việc còn mở
 
-- [ ] Commit (chờ dev xác nhận). Message đề xuất: `feat(claude-rc): pin Claude Code to 2.1.332 via CLAUDE_CODE_VERSION build arg`
-- [ ] Sau khi CI build xong, cập nhật `image:` trong [claude-rc/docker-compose.yml](../claude-rc/docker-compose.yml) sang tag `2.1.332-rc<N>`
+- [x] Commit và push (`d0fd8f5`)
+- [x] Cập nhật `image:` trong [claude-rc/docker-compose.yml](../claude-rc/docker-compose.yml) sang `2.1.332-rc11-manual`
 - [ ] Xóa image test local: `docker rmi claude-rc:test`
+- [ ] Recreate container trên máy chạy RC để dùng image mới (`docker compose up -d --force-recreate`)
 
 ## 6. Bài học rút ra
 
@@ -66,4 +67,6 @@ Khi CI dùng registry build cache, lệnh cài package không ghim phiên bản 
 | 1 | Khảo sát claude-rc, phát hiện lỗi cache | xong | 2026-11-25 10:40 | 2026-11-25 10:45 | 5 | |
 | 2 | Ghim version qua build arg, sửa CI/README/VERSION | xong | 2026-11-25 10:45 | 2026-11-25 10:50 | 5 | |
 | 3 | Validate compose, build và kiểm tra version | xong | 2026-11-25 10:50 | 2026-11-25 10:57 | 7 | |
-| **Tổng** | | | | | **17** | = 0.25h |
+| 4 | Commit, push, cập nhật tag image trong compose | xong | 2026-11-25 11:07 | 2026-11-25 11:10 | 3 | |
+| 4 | (tiếp) | xong | 2026-11-25 11:20 | 2026-11-25 11:22 | 2 | |
+| **Tổng** | | | | | **22** | = 0.25h |
