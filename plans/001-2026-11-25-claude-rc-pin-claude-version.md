@@ -5,7 +5,7 @@ status: completed
 priority: medium
 complexity: low
 impact: medium
-related_issues: []
+related_issues: [QUYIT-1120]
 related_prs: []
 estimated_hours:
 time_spent_hours: 0.25
