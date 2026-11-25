@@ -27,7 +27,10 @@ RUN apt-get update \
 # JAVA_HOME/MAVEN_HOME/PATH trỏ sẵn tới thư mục script cài vào (thuộc user node) nên cài xong dùng được ngay, không cần sửa PATH
 # /opt/scripts đưa vào PATH để gọi script theo tên
 # INSTALL_JAVA_MAVEN=true thì 00-entrypoint.sh tự gọi 10-install-java-maven.sh lúc khởi động (mặc định false)
+# INSTALL_NQDEV_PLUGIN=true thì 00-entrypoint.sh tự gọi 20-install-nqdev-plugin.sh (mặc định false)
 ENV INSTALL_JAVA_MAVEN=false \
+  INSTALL_NQDEV_PLUGIN=false \
+  NQDEV_PLUGINS=nqdev \
   JAVA_HOME=/home/node/.local/opt/java \
   MAVEN_HOME=/home/node/.local/opt/maven \
   PATH="/opt/scripts:/home/node/.local/opt/java/bin:/home/node/.local/opt/maven/bin:$PATH"
