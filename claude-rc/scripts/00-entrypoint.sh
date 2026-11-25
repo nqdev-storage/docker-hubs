@@ -36,4 +36,12 @@ case "${INSTALL_JAVA_MAVEN:-false}" in
     ;;
 esac
 
+# Cài plugin nqdev khi INSTALL_NQDEV_PLUGIN bật; script idempotent (đã cài thì bỏ qua), lỗi chỉ cảnh báo, không chặn khởi động
+case "${INSTALL_NQDEV_PLUGIN:-false}" in
+  true | TRUE | 1 | yes | YES)
+    log "INSTALL_NQDEV_PLUGIN bật, chạy 20-install-nqdev-plugin.sh..."
+    "$(dirname "$0")/20-install-nqdev-plugin.sh" install || log "Cài plugin nqdev thất bại, bỏ qua (chạy tay: 20-install-nqdev-plugin.sh)"
+    ;;
+esac
+
 exec "$@"

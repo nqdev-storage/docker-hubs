@@ -51,6 +51,21 @@ JAVA_VERSION=21 MAVEN_VERSION=3.9.9 10-install-java-maven.sh   # phiên bản kh
 - Image đã đặt sẵn `JAVA_HOME`, `MAVEN_HOME` và `PATH` trỏ tới hai thư mục trên, nên cài xong dùng `java`, `mvn` ngay. Khi chưa cài, `JAVA_HOME` trỏ vào thư mục chưa tồn tại (vô hại nếu bạn không dùng Java).
 - Cài vào lớp ghi của container nên **mất khi recreate container**. Muốn giữ: mount `./data/opt:/home/node/.local/opt` (cache Maven ở `~/.m2`, mount thêm `./data/m2:/home/node/.m2` nếu cần).
 
+### Plugin nqdev (cài khi cần)
+
+Plugin từ marketplace [nqdev-storage/claude-plugin-nqdev](https://github.com/nqdev-storage/claude-plugin-nqdev) (tên marketplace `nqdev-marketplace`, có plugin `nqdev` và `vhs`) không cài sẵn. Chạy trong container:
+
+```bash
+20-install-nqdev-plugin.sh                         # cài (đã có thì bỏ qua)
+20-install-nqdev-plugin.sh update                  # kéo bản mới của marketplace rồi cập nhật plugin
+NQDEV_PLUGINS="nqdev vhs" 20-install-nqdev-plugin.sh   # chọn plugin (mặc định: nqdev)
+NQDEV_PLUGINS=all 20-install-nqdev-plugin.sh           # mọi plugin khai báo trong marketplace.json
+```
+
+- Từ host: `docker exec claude-rc 20-install-nqdev-plugin.sh update`, rồi `docker restart claude-rc` để plugin có hiệu lực.
+- **Tự cài khi khởi động:** đặt `INSTALL_NQDEV_PLUGIN=true` trong `.env`. Entrypoint chỉ chạy `install`, nên plugin đã cài sẽ được bỏ qua và việc cập nhật vẫn phải chạy tay. Lỗi (vd mất mạng) chỉ cảnh báo.
+- Plugin nằm trong `~/.claude/plugins` (bind mount `./data/claude-config`) nên giữ được khi recreate container.
+
 ### Plugin cài sẵn: claude-memory-hub
 
 [`claude-memory-hub`](https://github.com/TranHoaiHung/claude-memory-hub) (bộ nhớ dài hạn cho Claude Code) được cài lúc build bằng `bunx claude-memory-hub@latest install`:
@@ -113,6 +128,8 @@ claude mcp add --scope user --transport http context7 https://mcp.context7.com/m
 | `CLAUDE_CONFIG_DIR` | `/home/node/.claude` | Login, trust, settings, MCP user, lịch sử session |
 | `VIRTUAL_ENV` | `/opt/venv` | Python venv (đã vào `PATH`) |
 | `INSTALL_JAVA_MAVEN` | `false` | `true` thì entrypoint tự chạy `10-install-java-maven.sh` lúc khởi động |
+| `INSTALL_NQDEV_PLUGIN` | `false` | `true` thì entrypoint tự chạy `20-install-nqdev-plugin.sh install` lúc khởi động |
+| `NQDEV_PLUGINS` | `nqdev` | Plugin cài từ `nqdev-marketplace`, cách nhau bởi dấu cách (vd `nqdev vhs`), hoặc `all` = mọi plugin trong marketplace |
 | `JAVA_HOME`, `MAVEN_HOME` | `/home/node/.local/opt/java`, `/home/node/.local/opt/maven` | Nơi `10-install-java-maven.sh` cài vào (đã vào `PATH`, chỉ có hiệu lực sau khi cài) |
 | `CHROME_BIN`, `PUPPETEER_EXECUTABLE_PATH` | `/usr/bin/chromium` | Dùng Chromium hệ thống |
 | `PUPPETEER_SKIP_DOWNLOAD` / `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` | `true` / `1` | Không tải browser riêng |
@@ -128,6 +145,7 @@ Copy `.env.example` → `.env`, điền giá trị thật (không commit `.env`)
 | `GIT_TERMINAL_PROMPT=0` | Git không hỏi mật khẩu tương tác (khuyến nghị) |
 | `GITHUB_API_URL` | Khi gọi GitHub API / Enterprise |
 | `INSTALL_JAVA_MAVEN` | `true` để tự cài Java + Maven lúc khởi động |
+| `INSTALL_NQDEV_PLUGIN`, `NQDEV_PLUGINS` | `true` để tự cài plugin nqdev lúc khởi động; chọn plugin |
 | `CLAUDE_REMOTE_CONTROL_SESSION_NAME_PREFIX` | Prefix tên session tự sinh |
 
 > Image **không tự cấu hình credential helper** cho `GITHUB_TOKEN`. Muốn `git push` qua HTTPS bằng token thì tự cấu hình, hoặc mount `~/.ssh`.
@@ -156,7 +174,8 @@ CMD ["claude", "remote-control", "--name", "Docker RC"]
 1. Chép bổ sung file mặc định vào thư mục bind mount (không ghi đè).
 2. Nếu thiếu runtime claude-memory-hub thì chạy `bunx claude-memory-hub@latest install` (lỗi, ví dụ mất mạng, chỉ cảnh báo).
 3. Nếu `INSTALL_JAVA_MAVEN=true` thì chạy `10-install-java-maven.sh` (lỗi chỉ cảnh báo).
-4. `exec` lệnh CMD.
+4. Nếu `INSTALL_NQDEV_PLUGIN=true` thì chạy `20-install-nqdev-plugin.sh install` (lỗi chỉ cảnh báo).
+5. `exec` lệnh CMD.
 
 Chạy shell nhưng vẫn qua entrypoint: `docker compose run --rm claude-rc bash` (không dùng `--entrypoint bash` vì sẽ bỏ qua bước khởi tạo).
 
@@ -216,8 +235,9 @@ Thứ tự trong Dockerfile: `include/.claude/` copy **trước** `install` củ
 
 | Script | Mục đích |
 |---|---|
-| `00-entrypoint.sh` | Entrypoint: khởi tạo dữ liệu bind mount, cài memory-hub nếu thiếu, cài Java/Maven nếu bật, rồi `exec` CMD |
+| `00-entrypoint.sh` | Entrypoint: khởi tạo dữ liệu bind mount, cài memory-hub nếu thiếu, cài Java/Maven và plugin nqdev nếu bật, rồi `exec` CMD |
 | `10-install-java-maven.sh` | Cài Java + Maven theo yêu cầu (xem mục Java & Maven) |
+| `20-install-nqdev-plugin.sh` | Cài / cập nhật plugin từ marketplace nqdev (xem mục Plugin nqdev) |
 
 ## 4. Yêu cầu tài khoản
 
