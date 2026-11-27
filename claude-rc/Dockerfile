@@ -21,6 +21,7 @@ RUN apt-get update \
   git ca-certificates curl tini ripgrep openssh-client less procps jq unzip \
   python3 python3-pip python3-venv \
   chromium fonts-liberation fonts-noto-color-emoji \
+  libicu72 \
   && rm -rf /var/lib/apt/lists/*
 
 # [nqdev] Không cài sẵn Java/Maven để giảm kích thước image; cài khi cần bằng `10-install-java-maven.sh` (xem README).
@@ -28,12 +29,17 @@ RUN apt-get update \
 # /opt/scripts đưa vào PATH để gọi script theo tên
 # INSTALL_JAVA_MAVEN=true thì 00-entrypoint.sh tự gọi 10-install-java-maven.sh lúc khởi động (mặc định false)
 # INSTALL_NQDEV_PLUGIN=true thì 00-entrypoint.sh tự gọi 20-install-nqdev-plugin.sh (mặc định false)
+# [nqdev] .NET cũng không cài sẵn: `30-install-dotnet.sh` cài vào DOTNET_ROOT (INSTALL_DOTNET=true thì entrypoint tự gọi).
+# libicu72 cài sẵn ở bước apt vì .NET cần ICU mà user node không có root để cài lúc chạy
 ENV INSTALL_JAVA_MAVEN=false \
   INSTALL_NQDEV_PLUGIN=false \
+  INSTALL_DOTNET=false \
   NQDEV_PLUGINS=nqdev \
   JAVA_HOME=/home/node/.local/opt/java \
   MAVEN_HOME=/home/node/.local/opt/maven \
-  PATH="/opt/scripts:/home/node/.local/opt/java/bin:/home/node/.local/opt/maven/bin:$PATH"
+  DOTNET_ROOT=/home/node/.local/opt/dotnet \
+  DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+  PATH="/opt/scripts:/home/node/.local/opt/java/bin:/home/node/.local/opt/maven/bin:/home/node/.local/opt/dotnet:/home/node/.dotnet/tools:$PATH"
 
 # Đảm bảo shell mặc định là bash
 RUN ln -sf /bin/bash /bin/sh

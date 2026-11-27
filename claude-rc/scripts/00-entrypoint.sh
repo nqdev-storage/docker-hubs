@@ -44,4 +44,12 @@ case "${INSTALL_NQDEV_PLUGIN:-false}" in
     ;;
 esac
 
+# Cài .NET SDK khi INSTALL_DOTNET bật; đã có thì bỏ qua, lỗi chỉ cảnh báo, không chặn khởi động
+case "${INSTALL_DOTNET:-false}" in
+  true | TRUE | 1 | yes | YES)
+    log "INSTALL_DOTNET bật, chạy 30-install-dotnet.sh..."
+    "$(dirname "$0")/30-install-dotnet.sh" || log "Cài .NET thất bại, bỏ qua (chạy tay: 30-install-dotnet.sh)"
+    ;;
+esac
+
 exec "$@"
