@@ -51,6 +51,19 @@ JAVA_VERSION=21 MAVEN_VERSION=3.9.9 10-install-java-maven.sh   # phiên bản kh
 - Image đã đặt sẵn `JAVA_HOME`, `MAVEN_HOME` và `PATH` trỏ tới hai thư mục trên, nên cài xong dùng `java`, `mvn` ngay. Khi chưa cài, `JAVA_HOME` trỏ vào thư mục chưa tồn tại (vô hại nếu bạn không dùng Java).
 - Cài vào lớp ghi của container nên **mất khi recreate container**. Muốn giữ: mount `./data/opt:/home/node/.local/opt` (cache Maven ở `~/.m2`, mount thêm `./data/m2:/home/node/.m2` nếu cần).
 
+### .NET SDK (không cài sẵn, cài khi cần)
+
+.NET cũng không có sẵn trong image. Khi cần, chạy trong container (không cần root):
+
+```bash
+30-install-dotnet.sh                       # .NET SDK 8.0
+DOTNET_CHANNEL=9.0 30-install-dotnet.sh    # kênh khác
+```
+
+- Script dùng `dotnet-install.sh` chính thức của Microsoft, cài vào `/home/node/.local/opt/dotnet` (= `DOTNET_ROOT`, đã vào `PATH`). Chạy lại thì bỏ qua nếu đã có SDK của kênh đó. `libicu72` có sẵn trong image nên không cần chế độ globalization-invariant.
+- **Tự cài khi khởi động:** đặt `INSTALL_DOTNET=true` trong `.env`; lỗi (vd mất mạng) chỉ cảnh báo, không chặn khởi động.
+- Giống Java/Maven, cài vào lớp ghi của container nên **mất khi recreate**. Muốn giữ: mount `./data/opt:/home/node/.local/opt`, và `./data/nuget:/home/node/.nuget` để giữ cache package NuGet.
+
 ### Plugin nqdev (cài khi cần)
 
 Plugin từ marketplace [nqdev-storage/claude-plugin-nqdev](https://github.com/nqdev-storage/claude-plugin-nqdev) (tên marketplace `nqdev-marketplace`, có plugin `nqdev` và `vhs`) không cài sẵn. Chạy trong container:
@@ -129,6 +142,9 @@ claude mcp add --scope user --transport http context7 https://mcp.context7.com/m
 | `VIRTUAL_ENV` | `/opt/venv` | Python venv (đã vào `PATH`) |
 | `INSTALL_JAVA_MAVEN` | `false` | `true` thì entrypoint tự chạy `10-install-java-maven.sh` lúc khởi động |
 | `INSTALL_NQDEV_PLUGIN` | `false` | `true` thì entrypoint tự chạy `20-install-nqdev-plugin.sh install` lúc khởi động |
+| `INSTALL_DOTNET` | `false` | `true` thì entrypoint tự chạy `30-install-dotnet.sh` lúc khởi động |
+| `DOTNET_ROOT` | `/home/node/.local/opt/dotnet` | Nơi `30-install-dotnet.sh` cài vào (đã vào `PATH` cùng `~/.dotnet/tools`) |
+| `DOTNET_CLI_TELEMETRY_OPTOUT` | `1` | Tắt telemetry của .NET CLI |
 | `NQDEV_PLUGINS` | `nqdev` | Plugin cài từ `nqdev-marketplace`, cách nhau bởi dấu cách (vd `nqdev vhs`), hoặc `all` = mọi plugin trong marketplace |
 | `JAVA_HOME`, `MAVEN_HOME` | `/home/node/.local/opt/java`, `/home/node/.local/opt/maven` | Nơi `10-install-java-maven.sh` cài vào (đã vào `PATH`, chỉ có hiệu lực sau khi cài) |
 | `CHROME_BIN`, `PUPPETEER_EXECUTABLE_PATH` | `/usr/bin/chromium` | Dùng Chromium hệ thống |
@@ -146,6 +162,7 @@ Copy `.env.example` → `.env`, điền giá trị thật (không commit `.env`)
 | `GITHUB_API_URL` | Khi gọi GitHub API / Enterprise |
 | `INSTALL_JAVA_MAVEN` | `true` để tự cài Java + Maven lúc khởi động |
 | `INSTALL_NQDEV_PLUGIN`, `NQDEV_PLUGINS` | `true` để tự cài plugin nqdev lúc khởi động; chọn plugin |
+| `INSTALL_DOTNET` | `true` để tự cài .NET SDK 8 lúc khởi động |
 | `CLAUDE_REMOTE_CONTROL_SESSION_NAME_PREFIX` | Prefix tên session tự sinh |
 
 > Image **không tự cấu hình credential helper** cho `GITHUB_TOKEN`. Muốn `git push` qua HTTPS bằng token thì tự cấu hình, hoặc mount `~/.ssh`.
@@ -175,7 +192,8 @@ CMD ["claude", "remote-control", "--name", "Docker RC"]
 2. Nếu thiếu runtime claude-memory-hub thì chạy `bunx claude-memory-hub@latest install` (lỗi, ví dụ mất mạng, chỉ cảnh báo).
 3. Nếu `INSTALL_JAVA_MAVEN=true` thì chạy `10-install-java-maven.sh` (lỗi chỉ cảnh báo).
 4. Nếu `INSTALL_NQDEV_PLUGIN=true` thì chạy `20-install-nqdev-plugin.sh install` (lỗi chỉ cảnh báo).
-5. `exec` lệnh CMD.
+5. Nếu `INSTALL_DOTNET=true` thì chạy `30-install-dotnet.sh` (lỗi chỉ cảnh báo).
+6. `exec` lệnh CMD.
 
 Chạy shell nhưng vẫn qua entrypoint: `docker compose run --rm claude-rc bash` (không dùng `--entrypoint bash` vì sẽ bỏ qua bước khởi tạo).
 
@@ -235,9 +253,10 @@ Thứ tự trong Dockerfile: `include/.claude/` copy **trước** `install` củ
 
 | Script | Mục đích |
 |---|---|
-| `00-entrypoint.sh` | Entrypoint: khởi tạo dữ liệu bind mount, cài memory-hub nếu thiếu, cài Java/Maven và plugin nqdev nếu bật, rồi `exec` CMD |
+| `00-entrypoint.sh` | Entrypoint: khởi tạo dữ liệu bind mount, cài memory-hub nếu thiếu, cài Java/Maven, plugin nqdev, .NET nếu bật, rồi `exec` CMD |
 | `10-install-java-maven.sh` | Cài Java + Maven theo yêu cầu (xem mục Java & Maven) |
 | `20-install-nqdev-plugin.sh` | Cài / cập nhật plugin từ marketplace nqdev (xem mục Plugin nqdev) |
+| `30-install-dotnet.sh` | Cài .NET SDK 8 theo yêu cầu (xem mục .NET SDK) |
 
 ## 4. Yêu cầu tài khoản
 
